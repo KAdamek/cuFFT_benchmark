@@ -1,3 +1,5 @@
+#include <iostream>
+//#include <stdio.h>
 #include <cufft.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
