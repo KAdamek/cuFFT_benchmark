@@ -197,7 +197,7 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	// CUDA_C_8U    8 bit complex as a pair of signed integers
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cuFFT_error = cufftXtExec(plan, FFT_mem.d_input, FFT_mem.d_output, CUFFT_FORWARD);
@@ -256,7 +256,7 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtMakePlanMany()\n", cuFFT_error); return(1);}
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cuFFT_error = cufftXtExec(plan, FFT_mem.d_input, FFT_mem.d_output, CUFFT_FORWARD);
@@ -315,7 +315,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtMakePlanMany()\n", cuFFT_error); return(1);}
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cuFFT_error = cufftXtExec(plan, FFT_mem.d_input, FFT_mem.d_output, CUFFT_INVERSE);
@@ -366,7 +366,7 @@ int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_C2C, FFT_lengths.nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecC2C(plan, (cufftComplex *) FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output, CUFFT_FORWARD);
@@ -415,7 +415,7 @@ int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_R2C, FFT_lengths.nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecR2C(plan, FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output);
@@ -464,7 +464,7 @@ int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_C2R, FFT_lengths.nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecC2R(plan, (cufftComplex *) FFT_mem.d_input, FFT_mem.d_output);
@@ -514,7 +514,7 @@ int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_Z2Z, FFT_lengths.nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecZ2Z(plan, (cufftDoubleComplex *) FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output, CUFFT_FORWARD);
@@ -563,7 +563,7 @@ int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_D2Z, FFT_lengths.nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecD2Z(plan, FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output);
@@ -612,7 +612,7 @@ int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_Z2D, FFT_lengths.nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecZ2D(plan, (cufftDoubleComplex *) FFT_mem.d_input, FFT_mem.d_output);
@@ -671,7 +671,7 @@ int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2C, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecC2C(plan, (cufftComplex *) FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output, CUFFT_FORWARD);
@@ -725,7 +725,7 @@ int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_R2C, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecR2C(plan, FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output);
@@ -779,7 +779,7 @@ int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2R, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecC2R(plan, (cufftComplex *) FFT_mem.d_input, FFT_mem.d_output);
@@ -834,7 +834,7 @@ int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2Z, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecZ2Z(plan, (cufftDoubleComplex *) FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output, CUFFT_FORWARD);
@@ -888,7 +888,7 @@ int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_D2Z, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecD2Z(plan, FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output);
@@ -942,7 +942,7 @@ int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2D, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecZ2D(plan, (cufftDoubleComplex *) FFT_mem.d_input, FFT_mem.d_output);
@@ -1002,7 +1002,7 @@ int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2C, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecC2C(plan, (cufftComplex *) FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output, CUFFT_FORWARD);
@@ -1056,7 +1056,7 @@ int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_R2C, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecR2C(plan, FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output);
@@ -1110,7 +1110,7 @@ int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2R, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecC2R(plan, (cufftComplex *) FFT_mem.d_input, FFT_mem.d_output);
@@ -1165,7 +1165,7 @@ int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2Z, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecZ2Z(plan, (cufftDoubleComplex *) FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output, CUFFT_FORWARD);
@@ -1219,7 +1219,7 @@ int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_D2Z, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecD2Z(plan, FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output);
@@ -1273,7 +1273,7 @@ int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2D, nFFTs);
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
-			FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
+			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
 			timer.Start();
 			//--------------------------------> cuFFT execution
 			cufftExecZ2D(plan, (cufftDoubleComplex *) FFT_mem.d_input, FFT_mem.d_output);

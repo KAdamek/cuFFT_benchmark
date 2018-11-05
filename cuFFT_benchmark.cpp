@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
 		printf("ERROR: FFT type has wrong format\n");
 		return(1);
 	}
-	char input_type[3];
+	char input_type[100];
 	sprintf(input_type,"%s",argv[7]);
 	int FFT_precision = 0;
 	int FFT_type = 0;
@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
 	
 	// Performance measurements
 	double FFT_execution_time = 0, FFT_transfer_time = 0;
-	char str_FFT_type[10], str_FFT_precision[10];
+	char str_FFT_type[20], str_FFT_precision[20];
 	if(FFT_precision==FFT_PRECISION_DOUBLE) sprintf(str_FFT_precision,"double"); else sprintf(str_FFT_precision, "single");
 	if(FFT_type==FFT_TYPE_C2C) sprintf(str_FFT_type, "C2C"); else if(FFT_type==FFT_TYPE_R2C) sprintf(str_FFT_type, "R2C"); else if(FFT_type==FFT_TYPE_C2R) sprintf(str_FFT_type, "C2R");
 	Performance_results cuFFT_results;
