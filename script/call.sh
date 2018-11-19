@@ -3,12 +3,16 @@
 #to run the script: sh call.sh memory_file.txt
 #where the memory_file is a list of permited memory settings on the gpu
 
+RED='\033[0;31m'
+NC='\033[0m'
+
 echo "Starting"
 # setup your id of the card and the base of memory frequency
 CARD=0
 FREQ_MEM=3003
-LENGTH=128
 
+for LENGTH in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072
+do
 rm timing-P4-${LENGTH}-0-0.txt
 
 #run the logger on the energy profiling
@@ -17,7 +21,7 @@ rm timing-P4-${LENGTH}-0-0.txt
 	echo "Logging process id: $PID"
 	sleep 5
 
-echo "Running the ${LENGTH}"	
+printf "${RED}------ Running the ${LENGTH} ------${NC}\n"	
 #run for each permitted memory a defined cuFFT
 #need to change the length of cuFFT, now is setup to run on 2GB of data, i.e. number of FFT auto computed to fit 2GB with the set length
 while IFS='' read -r line || [[ -n "$line" ]]; do
@@ -41,3 +45,4 @@ done < "$1"
 # clean-up 
 nvidia-smi -i $CARD -rac
 kill -2 $PID
+done
