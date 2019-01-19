@@ -11,7 +11,7 @@ echo "Starting"
 CARD=0
 FREQ_MEM=3003
 
-for LENGTH in 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072
+for LENGTH in 128 #32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 #2097152
 do
 rm timing-P4-${LENGTH}-0-0.txt
 
@@ -30,7 +30,7 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 	echo $CORE_MEM
 	nvidia-smi -i $CARD -ac $FREQ_MEM,$CORE_MEM
 	TIMESTAMP=$(date +"%Y/%m/%d %H:%M:%S.%3N")
-	nvprof --print-gpu-trace -u ms --csv ../cuFFT_benchmark.exe ${LENGTH} 0 0 -2 200 f R2C $CARD 2>out.nvprof
+	nvprof --print-gpu-trace -u ms --csv ../cuFFT_benchmark.exe ${LENGTH} 0 0 -2 200 f C2R $CARD 2>out.nvprof
 	START_LINE=$[$(awk '/Start/{ print NR; exit }' out.nvprof) + 3]
 	#in csv mode there is no line with Regs
 	#	END_LINE=$[$(awk '/Regs:/{ print NR; exit }' out.nvprof) - 3]
