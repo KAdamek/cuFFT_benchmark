@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <iomanip> 
+#include <iomanip>
 
 #include "FFT_clases.h"
 #include "debug.h"
@@ -28,29 +28,29 @@ void Generate_signal_noise(float2 *h_input, int N, int nFFTs){
 	}
 }
 //------------------------------------------------<
-int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
+int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
 
-int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
+int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
 
-int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
-int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time);
+int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
+int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time);
 
 
 int main(int argc, char* argv[]) {
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
 	FFT_Sizes FFT_size(total_input_FFT_size, total_output_FFT_size, input_bitprecision, output_bitprecision, total_input_FFT_size/input_bitprecision, total_output_FFT_size/output_bitprecision);
 	
 	// Performance measurements
-	double FFT_execution_time = 0, FFT_transfer_time = 0;
+	double FFT_execution_time = 0, FFT_standard_deviation = 0, FFT_transfer_time = 0;
 	char str_FFT_type[20], str_FFT_precision[20];
 	if(FFT_precision==FFT_PRECISION_DOUBLE) sprintf(str_FFT_precision,"double"); else sprintf(str_FFT_precision, "single");
 	if(FFT_type==FFT_TYPE_C2C) sprintf(str_FFT_type, "C2C"); else if(FFT_type==FFT_TYPE_R2C) sprintf(str_FFT_type, "R2C"); else if(FFT_type==FFT_TYPE_C2R) sprintf(str_FFT_type, "C2R");
@@ -222,59 +222,61 @@ int main(int argc, char* argv[]) {
 	// Rozdelit na podle FFT dimensions. Uvnitr nich to rozdelit na float nebo double a pak na C2C, C2R and R2C.
 	if(FFT_dimension==1) {
 		if(FFT_precision==FFT_PRECISION_FLOAT){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_1D_C2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_1D_R2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_1D_C2R_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_1D_C2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_1D_R2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_1D_C2R_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");
 		}
 		else if(FFT_precision==FFT_PRECISION_DOUBLE){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_1D_C2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_1D_R2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_1D_C2R_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_1D_C2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_1D_R2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_1D_C2R_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");				
 		}
 		else if(FFT_precision==FFT_PRECISION_HALF){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_1D_C2C_half(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_1D_R2C_half(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_1D_C2R_half(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_1D_C2C_half(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_1D_R2C_half(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_1D_C2R_half(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");				
 		}
 		else printf("ERROR: wrong FFT precision.\n");
 	}
 	else if(FFT_dimension==2) {
 		if(FFT_precision==FFT_PRECISION_FLOAT){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_2D_C2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_2D_R2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_2D_C2R_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_2D_C2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_2D_R2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_2D_C2R_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");
 		}
 		else if(FFT_precision==FFT_PRECISION_DOUBLE){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_2D_C2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_2D_R2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_2D_C2R_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_2D_C2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_2D_R2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_2D_C2R_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");				
 		}
 		else printf("ERROR: wrong FFT precision.\n");
 	}
 	else if(FFT_dimension==3) {
 		if(FFT_precision==FFT_PRECISION_FLOAT){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_3D_C2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_3D_R2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_3D_C2R_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_3D_C2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_3D_R2C_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_3D_C2R_float(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");
 		}
 		else if(FFT_precision==FFT_PRECISION_DOUBLE){
-			if(FFT_type==FFT_TYPE_C2C)      cuFFT_3D_C2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_R2C) cuFFT_3D_R2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
-			else if(FFT_type==FFT_TYPE_C2R) cuFFT_3D_C2R_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_transfer_time);
+			if(FFT_type==FFT_TYPE_C2C)      cuFFT_3D_C2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_R2C) cuFFT_3D_R2C_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
+			else if(FFT_type==FFT_TYPE_C2R) cuFFT_3D_C2R_double(FFT_lengths, nFFTs, nRuns, device, FFT_conf, FFT_size, &FFT_execution_time, &FFT_standard_deviation, &FFT_transfer_time);
 			else printf("ERROR: wrong FFT_type.\n");				
 		}
 		else printf("ERROR: wrong FFT precision.\n");
 	}
 	
 	cuFFT_results.GPU_time = FFT_execution_time;
+	cuFFT_results.GPU_stdev = FFT_standard_deviation;
 	cuFFT_results.TR_time  = FFT_transfer_time;
 	if(VERBOSE) printf("     cuFFT Execution time:\033[32m%0.3f\033[0mms\n", cuFFT_results.GPU_time);
+	if(VERBOSE) printf("     cuFFT Standard deviation:\033[32m%0.3f\033[0mms\n", cuFFT_results.GPU_stdev);
 	if(VERBOSE) printf("     cuFFT Transfer time:\033[32m%0.3f\033[0mms\n", cuFFT_results.TR_time);
 	cuFFT_results.Save();
 

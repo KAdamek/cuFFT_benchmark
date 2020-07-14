@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 //#include <stdio.h>
 #include <cufft.h>
 #include <cuda.h>
@@ -145,12 +146,21 @@ int Check_free_memory(size_t total_input_FFT_size, size_t total_output_FFT_size)
 	return(0);
 }
 
+double stdev(std::vector<double> *times, double mean_time){
+	double sum = 0;
+	for(size_t i=0; i<times->size(); i++){
+		double x = (times->operator[](i)-mean_time);
+		sum = sum + x*x;
+	}
+	double stdev = sqrt( sum/((double) times->size()) );
+	return(stdev);
+}
 
 // ***********************************************************************************
 // ***********************************************************************************
 // ***********************************************************************************
 
-int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -175,7 +185,7 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftCreate(&plan);
-	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %s in cufftCreate()\n", cuFFT_error); return(1);}
+	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftCreate()\n", cuFFT_error); return(1);}
 	long long int rank = 1;
 	long long int n[1]; n[0]=FFT_lengths.Nx;
 	long long int nembed[1]; nembed[0]=FFT_lengths.Nx;
@@ -195,6 +205,7 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	// CUDA_C_8I    8 bit complex as a pair of signed integers
 	// CUDA_R_8U    8 bit real as a signed integer 
 	// CUDA_C_8U    8 bit complex as a pair of signed integers
+	std::vector<double> times;
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -203,6 +214,7 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 			cuFFT_error = cufftXtExec(plan, FFT_mem.d_input, FFT_mem.d_output, CUFFT_FORWARD);
 			if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtExec()\n", cuFFT_error); return(1);}
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -213,14 +225,14 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -245,7 +257,7 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftCreate(&plan);
-	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %s in cufftCreate()\n", cuFFT_error); return(1);}
+	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftCreate()\n", cuFFT_error); return(1);}
 	long long int rank = 1;
 	long long int n[1]; n[0]=FFT_lengths.Nx;
 	long long int nembed[1]; nembed[0]=FFT_lengths.Nx;
@@ -254,6 +266,7 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	size_t workSize = 0;
 	cuFFT_error = cufftXtMakePlanMany(plan, rank, n, nembed, stride, dist, CUDA_R_16F, nembed, stride, dist, CUDA_C_16F, nFFTs, &workSize, CUDA_C_16F);
 	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtMakePlanMany()\n", cuFFT_error); return(1);}
+	std::vector<double> times;
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -262,6 +275,7 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 			cuFFT_error = cufftXtExec(plan, FFT_mem.d_input, FFT_mem.d_output, CUFFT_FORWARD);
 			if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtExec()\n", cuFFT_error); return(1);}
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -272,14 +286,14 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -304,7 +318,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftCreate(&plan);
-	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %s in cufftCreate()\n", cuFFT_error); return(1);}
+	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftCreate()\n", cuFFT_error); return(1);}
 	long long int rank = 1;
 	long long int n[1]; n[0]=FFT_lengths.Nx;
 	long long int nembed[1]; nembed[0]=FFT_lengths.Nx;
@@ -313,6 +327,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	size_t workSize = 0;
 	cuFFT_error = cufftXtMakePlanMany(plan, rank, n, nembed, stride, dist, CUDA_C_16F, nembed, stride, dist, CUDA_R_16F, nFFTs, &workSize, CUDA_C_16F);
 	if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtMakePlanMany()\n", cuFFT_error); return(1);}
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -321,6 +336,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 			cuFFT_error = cufftXtExec(plan, FFT_mem.d_input, FFT_mem.d_output, CUFFT_INVERSE);
 			if (CUFFT_SUCCESS != cuFFT_error) {printf("Error %d in cufftXtExec()\n", cuFFT_error); return(1);}
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -331,7 +347,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
@@ -339,7 +355,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 }
 
 
-int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -364,6 +380,7 @@ int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_C2C, FFT_lengths.nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -371,6 +388,7 @@ int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecC2C(plan, (cufftComplex *) FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output, CUFFT_FORWARD);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -381,14 +399,14 @@ int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -413,6 +431,7 @@ int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_R2C, FFT_lengths.nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -420,6 +439,7 @@ int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecR2C(plan, FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -430,14 +450,14 @@ int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -462,6 +482,7 @@ int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_C2R, FFT_lengths.nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -469,6 +490,7 @@ int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecC2R(plan, (cufftComplex *) FFT_mem.d_input, FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -479,7 +501,7 @@ int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
@@ -487,7 +509,7 @@ int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 }
 
 
-int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -512,6 +534,7 @@ int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_Z2Z, FFT_lengths.nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -519,6 +542,7 @@ int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecZ2Z(plan, (cufftDoubleComplex *) FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output, CUFFT_FORWARD);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -529,14 +553,14 @@ int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -561,6 +585,7 @@ int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_D2Z, FFT_lengths.nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -568,6 +593,7 @@ int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecD2Z(plan, FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -578,14 +604,14 @@ int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -610,6 +636,7 @@ int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	cufftHandle plan;
 	cufftResult cuFFT_error;
 	cuFFT_error = cufftPlan1d(&plan, FFT_lengths.Nx, CUFFT_Z2D, FFT_lengths.nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -617,6 +644,7 @@ int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecZ2D(plan, (cufftDoubleComplex *) FFT_mem.d_input, FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -627,7 +655,7 @@ int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
@@ -639,7 +667,7 @@ int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 // ***********************************************************************************
 
 
-int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -669,6 +697,7 @@ int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2C, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -676,6 +705,7 @@ int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecC2C(plan, (cufftComplex *) FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output, CUFFT_FORWARD);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -686,14 +716,14 @@ int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -723,6 +753,7 @@ int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_R2C, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -730,6 +761,7 @@ int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecR2C(plan, FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -740,14 +772,14 @@ int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -777,6 +809,7 @@ int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	int stride = 1;
 	int dist = FFT_lengths.Nx*FFT_lengths.Ny;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2R, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -784,6 +817,7 @@ int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecC2R(plan, (cufftComplex *) FFT_mem.d_input, FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -794,7 +828,7 @@ int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
@@ -802,7 +836,7 @@ int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 }
 
 
-int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -832,6 +866,7 @@ int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2Z, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -839,6 +874,7 @@ int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecZ2Z(plan, (cufftDoubleComplex *) FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output, CUFFT_FORWARD);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -849,14 +885,14 @@ int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -886,6 +922,7 @@ int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_D2Z, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -893,6 +930,7 @@ int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecD2Z(plan, FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -903,14 +941,14 @@ int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -940,6 +978,7 @@ int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2D, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -947,6 +986,7 @@ int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecZ2D(plan, (cufftDoubleComplex *) FFT_mem.d_input, FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -957,7 +997,7 @@ int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
@@ -970,7 +1010,7 @@ int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 // ***********************************************************************************
 
 
-int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -1000,6 +1040,7 @@ int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny*FFT_lengths.Nz;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2C, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -1007,6 +1048,7 @@ int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecC2C(plan, (cufftComplex *) FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output, CUFFT_FORWARD);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -1017,14 +1059,14 @@ int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -1054,6 +1096,7 @@ int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny*FFT_lengths.Nz;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_R2C, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -1061,6 +1104,7 @@ int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecR2C(plan, FFT_mem.d_input, (cufftComplex *) FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -1071,14 +1115,14 @@ int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -1108,6 +1152,7 @@ int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny*FFT_lengths.Nz;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_C2R, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -1115,6 +1160,7 @@ int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 			//--------------------------------> cuFFT execution
 			cufftExecC2R(plan, (cufftComplex *) FFT_mem.d_input, FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -1125,7 +1171,7 @@ int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
@@ -1133,7 +1179,7 @@ int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 }
 
 
-int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -1163,6 +1209,7 @@ int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny*FFT_lengths.Nz;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2Z, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -1170,6 +1217,7 @@ int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecZ2Z(plan, (cufftDoubleComplex *) FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output, CUFFT_FORWARD);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -1180,14 +1228,14 @@ int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -1217,6 +1265,7 @@ int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny*FFT_lengths.Nz;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_D2Z, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -1224,6 +1273,7 @@ int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecD2Z(plan, FFT_mem.d_input, (cufftDoubleComplex *) FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -1234,14 +1284,14 @@ int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());
 	return(0);
 }
 
-int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *transfer_time){
+int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int device, FFT_Configuration FFT_conf, FFT_Sizes FFT_size, double *execution_time, double *standard_deviation, double *transfer_time){
 	int error;
 	//---------> Initial nVidia stuff
 	error = Initiate_device(device);
@@ -1271,6 +1321,7 @@ int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	int stride = 1;
 	int dist =FFT_lengths.Nx*FFT_lengths.Ny*FFT_lengths.Nz;
 	cuFFT_error = cufftPlanMany(&plan, rank, n, nembed, stride, dist, nembed, stride, dist, CUFFT_Z2D, nFFTs);
+	std::vector<double> times; 
 	if (CUFFT_SUCCESS == cuFFT_error) {
 		for(int f=0; f<nRuns; f++){
 			if(HOST_TO_DEVICE==1) FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &dtemp);
@@ -1278,6 +1329,7 @@ int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 			//--------------------------------> cuFFT execution
 			cufftExecZ2D(plan, (cufftDoubleComplex *) FFT_mem.d_input, FFT_mem.d_output);
 			timer.Stop();
+			times.push_back(timer.Elapsed());
 			FFT_execution_time += timer.Elapsed();
 		}
 		FFT_execution_time = FFT_execution_time/((double) nRuns);
@@ -1288,7 +1340,7 @@ int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
-	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time;
+	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
 	checkCudaErrors(cudaGetLastError());

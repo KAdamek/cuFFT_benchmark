@@ -9,6 +9,7 @@ class Performance_results{
 public:
 	char filename[200];
 	double GPU_time;
+	double GPU_stdev;
 	double TR_time;
 	int Nx;
 	int Ny;
@@ -27,12 +28,12 @@ public:
 	void Save(){
 		ofstream FILEOUT;
 		FILEOUT.open (filename, std::ofstream::out | std::ofstream::app);
-		FILEOUT << std::fixed << std::setprecision(8) << Nx << " " << Ny << " " << Nz << " " << nFFTs << " " << nRuns << " " << modGB << " " << FFT_dimension << " " << GPU_time << " " << TR_time << " " << FFT_type << " " << FFT_precision << endl;
+		FILEOUT << std::fixed << std::setprecision(8) << Nx << " " << Ny << " " << Nz << " " << nFFTs << " " << nRuns << " " << modGB << " " << FFT_dimension << " " << GPU_time << " " << GPU_stdev << " " << TR_time << " " << FFT_type << " " << FFT_precision << endl;
 		FILEOUT.close();
 	}
 	
 	void Print(){
-		cout << std::fixed << std::setprecision(8) << Nx << " " << Ny << " " << Nz << " " << nFFTs << " " << nRuns << " " << modGB << " " << FFT_dimension << " " << GPU_time << " " << TR_time << " " << FFT_type << " " << FFT_precision << endl;
+		cout << std::fixed << std::setprecision(8) << Nx << " " << Ny << " " << Nz << " " << nFFTs << " " << nRuns << " " << modGB << " " << FFT_dimension << " " << GPU_time << " " << GPU_stdev << " " << TR_time << " " << FFT_type << " " << FFT_precision << endl;
 	}
 	
 	void Assign(int t_Nx, int t_Ny, int t_Nz, int t_nFFTs, int t_nRuns, double t_modGB, int t_FFT_dimension, const char *t_FFT_type, const char *t_FFT_precision, const char *t_filename){
