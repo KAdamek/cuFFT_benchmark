@@ -1,6 +1,8 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
-//#include <stdio.h>
+
+
 #include <cufft.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -65,7 +67,43 @@ public:
 	
 	int Generate_data_host(size_t input_nElements){
 		srand(time(NULL));
-		for(size_t f=0; f<input_nElements; f++) h_input[f] = rand()/(float)RAND_MAX;
+		#ifdef EXPORT
+			float f1,f2,a1,a2;
+			f1=1.0/8.0; f2=2.0/8.0; a1=1.0; a2=0.5;
+	
+			for(size_t f=0; f<input_nElements; f++) {
+				if(f%2==0) {
+					h_input[f] = a1*sin(2.0*3.141592654*f1*f) + a2*sin(2.0*3.141592654*f2*f) + 0.1245*a1*sin(2.0*3.141592654*0.354245*f1*f) + 0.5487*a2*sin(2.0*3.141592654*0.1124457*f2*f) + (3.0*3.141592654)/4.0;
+				}
+				else {
+					h_input[f] = 0;
+				}
+			}
+		#else
+			for(size_t f=0; f<input_nElements; f++) {
+				h_input[f] = rand()/(float)RAND_MAX;
+			}
+		#endif
+		return(0);
+	}
+	
+	int Generate_data_host_half(size_t input_nElements){
+		srand(time(NULL));
+		#ifdef EXPORT
+			float f1,f2,a1,a2;
+			f1=1.0/8.0; f2=2.0/8.0; a1=1.0; a2=0.5;
+	
+			for(size_t f=0; f<input_nElements; f++) {
+				h_input[f].x = __float2half(a1*sin(2.0*3.141592654*f1*f) + a2*sin(2.0*3.141592654*f2*f) + 0.1245*a1*sin(2.0*3.141592654*0.354245*f1*f) + 0.5487*a2*sin(2.0*3.141592654*0.1124457*f2*f) + (3.0*3.141592654)/4.0);
+				h_input[f].y = __float2half(0.0);
+			}
+		#else
+			for(size_t f=0; f<input_nElements; f++) {
+				h_input[f].x = __float2half(rand()/(float)RAND_MAX);
+				h_input[f].y = __float2half(0.0);
+			}
+		#endif
+		printf("Finished\n");
 		return(0);
 	}
 	
@@ -107,6 +145,53 @@ public:
 			timer.Stop();
 			*transfer_time += timer.Elapsed();
 		}
+		return(0);
+	}
+	
+	
+	void writeout(half2 value, std::ofstream &FILEOUT) {
+		FILEOUT << (double) __half2float(value.x) << " " << (double) __half2float(value.y) << std::endl;
+	}
+	
+	void writeout(float2 value, std::ofstream &FILEOUT) {
+		FILEOUT << (double) value.x << " " << (double) value.y << std::endl;
+	}
+	
+	void writeout(double2 value, std::ofstream &FILEOUT) {
+		FILEOUT << (double) value.x << " " << (double) value.y << std::endl;
+	}
+	
+	void writeout(float value, std::ofstream &FILEOUT) {
+		FILEOUT << (double) value << std::endl;
+	}
+	
+	void writeout(double value, std::ofstream &FILEOUT) {
+		FILEOUT << (double) value << std::endl;
+	}
+	
+	int Export_fft_result(FFT_Configuration fft_config, FFT_Lengths fft_params){
+		char str[200];
+		sprintf(str,"fft_result_%zu_%zu_%zu", fft_params.Nx, fft_params.Ny, fft_params.Nz);
+		if(fft_config.FFT_precision==FFT_PRECISION_DOUBLE) sprintf(str,"%s_d",str);
+		if(fft_config.FFT_precision==FFT_PRECISION_FLOAT) sprintf(str,"%s_f",str);
+		if(fft_config.FFT_precision==FFT_PRECISION_HALF) sprintf(str,"%s_h",str);
+		if(fft_config.FFT_type==FFT_TYPE_C2C) sprintf(str,"%s_C2C.dat",str);
+		if(fft_config.FFT_type==FFT_TYPE_R2C) sprintf(str,"%s_R2C.dat",str);
+		if(fft_config.FFT_type==FFT_TYPE_C2R) sprintf(str,"%s_C2R.dat",str);
+		printf("%s\n", str);
+		
+		int nElements = fft_params.Nx*fft_params.Ny*fft_params.Nz;
+		std::ofstream FILEOUT;
+		FILEOUT.open(str);
+		if (!FILEOUT.fail()){
+			for(int f = 0; f < nElements; f++){
+				writeout(h_output[f], FILEOUT);
+			}
+		}
+		else {
+			return(1);
+		}
+		FILEOUT.close();
 		return(0);
 	}
 	
@@ -176,7 +261,7 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//---------> Memory
 	FFT_Memory<half2> FFT_mem;
 	FFT_mem.Allocate(FFT_size.total_input_FFT_size, FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace);
-	//FFT_mem.Generate_data(FFT_size.input_nElements, FFT_conf.FFT_host_to_device);
+	FFT_mem.Generate_data_host_half(FFT_size.input_nElements);
 	FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &FFT_transfer_time);
 	
 	
@@ -225,6 +310,9 @@ int cuFFT_1D_C2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif 
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -248,7 +336,7 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//---------> Memory
 	FFT_Memory<half2> FFT_mem;
 	FFT_mem.Allocate(FFT_size.total_input_FFT_size, FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace);
-	//FFT_mem.Generate_data(FFT_size.input_nElements, FFT_conf.FFT_host_to_device);
+	FFT_mem.Generate_data_host_half(FFT_size.input_nElements);
 	FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &FFT_transfer_time);
 	
 	
@@ -286,6 +374,9 @@ int cuFFT_1D_R2C_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif 
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -309,7 +400,7 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//---------> Memory
 	FFT_Memory<half2> FFT_mem;
 	FFT_mem.Allocate(FFT_size.total_input_FFT_size, FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace);
-	//FFT_mem.Generate_data(FFT_size.input_nElements, FFT_conf.FFT_host_to_device);
+	FFT_mem.Generate_data_host_half(FFT_size.input_nElements);
 	FFT_mem.Transfer_input(FFT_size.total_input_FFT_size, FFT_conf.FFT_host_to_device, &FFT_transfer_time);
 	
 	
@@ -347,6 +438,9 @@ int cuFFT_1D_C2R_half(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int devi
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -399,6 +493,9 @@ int cuFFT_1D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -450,6 +547,9 @@ int cuFFT_1D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -501,6 +601,9 @@ int cuFFT_1D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -553,6 +656,9 @@ int cuFFT_1D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -604,6 +710,9 @@ int cuFFT_1D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -655,6 +764,9 @@ int cuFFT_1D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -716,6 +828,9 @@ int cuFFT_2D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -772,6 +887,9 @@ int cuFFT_2D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -828,6 +946,9 @@ int cuFFT_2D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -885,6 +1006,9 @@ int cuFFT_2D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -941,6 +1065,9 @@ int cuFFT_2D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -997,6 +1124,9 @@ int cuFFT_2D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -1059,6 +1189,9 @@ int cuFFT_3D_C2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -1115,6 +1248,9 @@ int cuFFT_3D_R2C_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -1171,6 +1307,9 @@ int cuFFT_3D_C2R_float(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int dev
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -1228,6 +1367,9 @@ int cuFFT_3D_C2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -1284,6 +1426,9 @@ int cuFFT_3D_R2C_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
@@ -1340,6 +1485,9 @@ int cuFFT_3D_C2R_double(FFT_Lengths FFT_lengths, size_t nFFTs, int nRuns, int de
 	//------------------------------------------------------------<
 	
 	FFT_mem.Transfer_output(FFT_size.total_output_FFT_size, FFT_conf.FFT_host_to_device, FFT_conf.FFT_inplace, &FFT_transfer_time);
+	#ifdef EXPORT
+		FFT_mem.Export_fft_result(FFT_conf, FFT_lengths);
+	#endif
 	*execution_time = FFT_execution_time; *transfer_time = FFT_transfer_time; *standard_deviation = stdev(&times, FFT_execution_time);
 	
 	//---------> error check -----
