@@ -125,42 +125,42 @@ int main(int argc, char* argv[]) {
 	
 	if(strcmp(input_type,"C2C")==0) {
 		FFT_type = FFT_TYPE_C2C;
-		input_bitprecision = 2*FFT_precision;
-		output_bitprecision = 2*FFT_precision;
-		one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*input_bitprecision;
-		one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*output_bitprecision;
+		input_bitprecision = FFT_precision;
+		output_bitprecision = FFT_precision;
+		one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*2*input_bitprecision;
+		one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*2*output_bitprecision;
 	}
 	else if(strcmp(input_type,"R2C")==0) {
 		FFT_type = FFT_TYPE_R2C;
 		input_bitprecision = FFT_precision;
-		output_bitprecision = 2*FFT_precision;
+		output_bitprecision = FFT_precision;
 		if(FFT_dimension==1) {
 			one_input_FFT_size = ((size_t) Nx)*input_bitprecision;
-			one_output_FFT_size = ((size_t) (Nx/2+1))*output_bitprecision;
+			one_output_FFT_size = ((size_t) (Nx/2+1))*2*output_bitprecision;
 		}
 		else if(FFT_dimension==2) {
 			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*input_bitprecision;
-			one_output_FFT_size = ((size_t) Nx)*((size_t) (Ny/2+1))*output_bitprecision;
+			one_output_FFT_size = ((size_t) Nx)*((size_t) (Ny/2+1))*2*output_bitprecision;
 		}
 		else if(FFT_dimension==3) {
 			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*input_bitprecision;
-			one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) (Nz/2+1))*output_bitprecision;
+			one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) (Nz/2+1))*2*output_bitprecision;
 		}
 	}
 	else if(strcmp(input_type,"C2R")==0) {
 		FFT_type = FFT_TYPE_C2R;
-		input_bitprecision = 2*FFT_precision;
+		input_bitprecision = FFT_precision;
 		output_bitprecision = FFT_precision;
 		if(FFT_dimension==1) {
-			one_input_FFT_size = ((size_t) Nx)*input_bitprecision;
+			one_input_FFT_size = ((size_t) Nx)*2*input_bitprecision;
 			one_output_FFT_size = ((size_t) Nx)*output_bitprecision;
 		}
 		else if(FFT_dimension==2) {
-			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*input_bitprecision;
+			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*2*input_bitprecision;
 			one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*output_bitprecision;
 		}
 		else if(FFT_dimension==3) {
-			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*input_bitprecision;
+			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*2*input_bitprecision;
 			one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*output_bitprecision;
 		}
 	}
@@ -197,8 +197,12 @@ int main(int argc, char* argv[]) {
 		printf("FFT type: "); if(FFT_type==FFT_TYPE_C2C) printf("complex-to-complex;\n"); else if(FFT_type==FFT_TYPE_R2C) printf("real-to-complex;\n"); else if(FFT_type==FFT_TYPE_C2R) printf("complex-to-real;\n");
 		printf("Device: %d;\n", device);
 		printf("----------\n");
-		printf("Individual FFT sizes: I: %zu; O: %zu;\n", one_input_FFT_size/input_bitprecision, one_input_FFT_size/output_bitprecision);
-		printf("Number of elements: I:%zu; O:%zu\n", total_input_FFT_size/input_bitprecision, total_output_FFT_size/output_bitprecision);
+		printf("Individual FFT sizes: I: %zu bytes; O: %zu bytes;\n", one_input_FFT_size, one_input_FFT_size);
+		printf("Number of elements:");
+		if(strcmp(input_type,"C2C")==0) printf("I:%zu; O:%zu\n", total_input_FFT_size/(2*input_bitprecision), total_output_FFT_size/(2*output_bitprecision));
+		else if(strcmp(input_type,"R2C")==0) printf("I:%zu; O:%zu\n", total_input_FFT_size/(input_bitprecision), total_output_FFT_size/(2*output_bitprecision));
+		else if(strcmp(input_type,"C2R")==0) printf("I:%zu; O:%zu\n", total_input_FFT_size/(2*input_bitprecision), total_output_FFT_size/(output_bitprecision));
+		
 		printf("Bit precisions: I:%zu; O:%zu;\n", input_bitprecision, output_bitprecision);
 		printf("Memory assigned for the FFTs: %f MB;\n", ((double) mem_size)/(1024.0*1024.0));
 		printf("Memory taken by FFTs: I:%f MB; O:%f MB\n", ((double) total_input_FFT_size)/(1024.0*1024.0), ((double) total_output_FFT_size)/(1024.0*1024.0));
