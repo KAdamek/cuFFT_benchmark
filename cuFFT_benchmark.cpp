@@ -122,6 +122,8 @@ int main(int argc, char* argv[]) {
 	size_t output_bitprecision = 0;
 	size_t one_input_FFT_size = 0;
 	size_t one_output_FFT_size = 0;	
+	size_t input_array_nElements = 0;
+	size_t output_array_nElements = 0;
 	
 	if(strcmp(input_type,"C2C")==0) {
 		FFT_type = FFT_TYPE_C2C;
@@ -129,6 +131,8 @@ int main(int argc, char* argv[]) {
 		output_bitprecision = FFT_precision;
 		one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*2*input_bitprecision;
 		one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*2*output_bitprecision;
+		input_array_nElements = one_input_FFT_size/(2*input_bitprecision);
+		output_array_nElements = one_output_FFT_size/(2*output_bitprecision);
 	}
 	else if(strcmp(input_type,"R2C")==0) {
 		FFT_type = FFT_TYPE_R2C;
@@ -146,6 +150,8 @@ int main(int argc, char* argv[]) {
 			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*input_bitprecision;
 			one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) (Nz/2+1))*2*output_bitprecision;
 		}
+		input_array_nElements = one_input_FFT_size/(input_bitprecision);
+		output_array_nElements = one_output_FFT_size/(2*output_bitprecision);
 	}
 	else if(strcmp(input_type,"C2R")==0) {
 		FFT_type = FFT_TYPE_C2R;
@@ -163,6 +169,8 @@ int main(int argc, char* argv[]) {
 			one_input_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*2*input_bitprecision;
 			one_output_FFT_size = ((size_t) Nx)*((size_t) Ny)*((size_t) Nz)*output_bitprecision;
 		}
+		input_array_nElements = one_input_FFT_size/(2*input_bitprecision);
+		output_array_nElements = one_output_FFT_size/(output_bitprecision);
 	}
 	else {
 		printf("ERROR: wrong FFT type.");
@@ -198,11 +206,7 @@ int main(int argc, char* argv[]) {
 		printf("Device: %d;\n", device);
 		printf("----------\n");
 		printf("Individual FFT sizes: I: %zu bytes; O: %zu bytes;\n", one_input_FFT_size, one_input_FFT_size);
-		printf("Number of elements:");
-		if(strcmp(input_type,"C2C")==0) printf("I:%zu; O:%zu\n", total_input_FFT_size/(2*input_bitprecision), total_output_FFT_size/(2*output_bitprecision));
-		else if(strcmp(input_type,"R2C")==0) printf("I:%zu; O:%zu\n", total_input_FFT_size/(input_bitprecision), total_output_FFT_size/(2*output_bitprecision));
-		else if(strcmp(input_type,"C2R")==0) printf("I:%zu; O:%zu\n", total_input_FFT_size/(2*input_bitprecision), total_output_FFT_size/(output_bitprecision));
-		
+		printf("Number of array elements: I:%zu; O:%zu\n", input_array_nElements, output_array_nElements);
 		printf("Bit precisions: I:%zu; O:%zu;\n", input_bitprecision, output_bitprecision);
 		printf("Memory assigned for the FFTs: %f MB;\n", ((double) mem_size)/(1024.0*1024.0));
 		printf("Memory taken by FFTs: I:%f MB; O:%f MB\n", ((double) total_input_FFT_size)/(1024.0*1024.0), ((double) total_output_FFT_size)/(1024.0*1024.0));
@@ -213,7 +217,7 @@ int main(int argc, char* argv[]) {
 	// Creating classes
 	FFT_Lengths FFT_lengths(Nx, Ny, Nz, nFFTs);
 	FFT_Configuration FFT_conf(FFT_precision, FFT_type, FFT_dimension, FFT_inplace, FFT_host_to_device);
-	FFT_Sizes FFT_size(total_input_FFT_size, total_output_FFT_size, input_bitprecision, output_bitprecision, total_input_FFT_size/input_bitprecision, total_output_FFT_size/output_bitprecision);
+	FFT_Sizes FFT_size(total_input_FFT_size, total_output_FFT_size, input_bitprecision, output_bitprecision, input_array_nElements, output_array_nElements);
 	
 	// Performance measurements
 	double FFT_execution_time = 0, FFT_standard_deviation = 0, FFT_transfer_time = 0;
